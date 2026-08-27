@@ -1,0 +1,626 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>X Following Manager</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<header>
+  <h1><img class="logo" src="logo.png" alt="Smart AutoBot"> Following Manager</h1>
+</header>
+
+<main>
+  <!-- ================= SECTION 1: AUTOMATION ================= -->
+  <section id="panel-automation" class="panel active" role="tabpanel">
+
+    <!-- One card at a time. Both forms are long, so this picker keeps either automation one
+         click from the top instead of buried under the other one's settings. The dot reports
+         the hidden automation's state, so a run is never invisible. -->
+    <nav class="autoPicker" role="tablist" aria-label="Choose an automation">
+      <button class="autoTab active" role="tab" aria-selected="true" data-auto="unfollow" type="button">
+        <span class="dot" id="unfollowDot"></span>Twitter/X Unfollow
+      </button>
+      <button class="autoTab" role="tab" aria-selected="false" data-auto="engage" type="button">
+        <span class="dot" id="engageDot"></span>Twitter/X Like &amp; Comment
+      </button>
+    </nav>
+
+    <!-- ---- Automation A: Unfollow ---- -->
+    <article class="automation" id="unfollowSection">
+      <div class="autoHead">
+        <div>
+          <h2>Twitter/X Unfollow</h2>
+          <small>Unfollow accounts from your Following page.</small>
+        </div>
+        <div class="toggle" role="group" aria-label="Enable or disable unfollow automation">
+          <button class="on" data-enable="unfollow" data-value="true" type="button">Enable</button>
+          <button class="off" data-enable="unfollow" data-value="false" type="button">Disable</button>
+        </div>
+      </div>
+
+      <div class="autoBody" id="unfollowBody">
+        <label class="field">Mode
+          <select data-path="unfollow.mode" id="unfollowMode">
+            <option value="all">Unfollow all</option>
+            <option value="nonfollowers">Unfollow non-followers</option>
+            <option value="custom">Custom username list</option>
+          </select>
+        </label>
+
+        <label class="field">Protected / selected usernames
+          <textarea data-path="unfollow.usernames" data-type="usernames" placeholder="@username1&#10;@username2"></textarea>
+        </label>
+        <small class="hint">In All and Non-Followers modes these usernames are always protected.</small>
+
+        <div class="radios" id="unfollowCustomOptions" hidden>
+          <label><input type="radio" name="unfollowCustomMode" data-path="unfollow.customMode" value="except"> Unfollow everyone except these</label>
+          <label><input type="radio" name="unfollowCustomMode" data-path="unfollow.customMode" value="only"> Unfollow only these usernames</label>
+        </div>
+
+        <div class="grid2">
+          <label class="field">Min delay (s)<input type="number" data-path="unfollow.minDelaySec" min="0.5" max="600" step="0.5"></label>
+          <label class="field">Max delay (s)<input type="number" data-path="unfollow.maxDelaySec" min="0.5" max="600" step="0.5"></label>
+          <label class="field">Batch min<input type="number" data-path="unfollow.batchMin" min="1" max="200" step="1"></label>
+          <label class="field">Batch max<input type="number" data-path="unfollow.batchMax" min="1" max="200" step="1"></label>
+        </div>
+        <label class="field">Cooldown between batches (minutes)
+          <input type="number" data-path="unfollow.cooldownMinutes" min="0" max="120" step="1">
+        </label>
+
+        <label class="check"><input type="checkbox" data-path="unfollow.stopAfterMinute"> Stop after 1 minute</label>
+        <label class="check"><input type="checkbox" data-path="unfollow.reloadOnFinished"> Reload page when finished</label>
+        <label class="check"><input type="checkbox" data-path="unfollow.autoScroll"> Auto-scroll to load more accounts</label>
+        <label class="check"><input type="checkbox" data-path="unfollow.autoRefresh"> Auto-refresh the list when it stalls</label>
+
+        <div class="actions">
+          <button data-run="unfollow" data-demo="true" type="button">Demo</button>
+          <button class="primary" data-run="unfollow" data-demo="false" type="button">Start</button>
+          <button data-cmd="unfollow:pause" type="button">Pause</button>
+          <button data-cmd="unfollow:resume" type="button">Resume</button>
+          <button data-cmd="unfollow:stop" type="button">Stop</button>
+          <button class="muted" data-cmd="unfollow:reset" type="button">Reset</button>
+        </div>
+
+        <div class="progress">
+          <div><span>Total found</span><b data-stat="unfollow.total">0</b></div>
+          <div><span>Processed</span><b data-stat="unfollow.processed">0</b></div>
+          <div><span>Unfollowed</span><b data-stat="unfollow.unfollowed">0</b></div>
+          <div><span>Demo matches</span><b data-stat="unfollow.demoMatches">0</b></div>
+          <div><span>Skipped</span><b data-stat="unfollow.skipped">0</b></div>
+          <div><span>Remaining</span><b data-stat="unfollow.remaining">0</b></div>
+          <p>Current <strong data-stat="unfollow.currentUsername">-</strong></p>
+          <p>Status <strong data-stat="unfollow.status">Idle</strong><span class="countdown" data-countdown="unfollow"></span></p>
+          <p class="notice" data-stat="unfollow.notice"></p>
+          <p class="error" data-stat="unfollow.error"></p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ---- Automation B: Like & Comment ---- -->
+    <article class="automation" id="engageSection" hidden>
+      <div class="autoHead">
+        <div>
+          <h2>Twitter/X Like &amp; Comment</h2>
+          <small>Browse the Home timeline and react with AI-written replies.</small>
+        </div>
+        <div class="toggle" role="group" aria-label="Enable or disable like and comment automation">
+          <button class="on" data-enable="engage" data-value="true" type="button">Enable</button>
+          <button class="off" data-enable="engage" data-value="false" type="button">Disable</button>
+        </div>
+      </div>
+
+      <div class="autoBody" id="engageBody">
+        <div class="automationConsole">
+          <div class="topStats">
+            <div><span>Scanned</span><b data-stat="engage.scanned">0</b></div>
+            <div><span>Processed</span><b data-stat="engage.processed">0</b></div>
+            <div><span>Liked</span><b data-stat="engage.liked">0</b></div>
+            <div><span>Comment</span><b data-stat="engage.commented">0</b></div>
+            <div><span>Skipped</span><b data-stat="engage.skipped">0</b></div>
+            <div><span>Target</span><b data-stat="engage.target">0</b></div>
+          </div>
+          <div class="consoleStatus"><span data-stat="engage.status">Idle</span><span data-countdown="engage"></span><b data-stat="engage.currentAuthor">-</b></div>
+          <div class="consoleControls">
+            <button data-run="engage" data-demo="true" type="button">Demo</button>
+            <button class="primary startControl mainRunControl" id="engageMainControl" type="button">Start</button>
+            <button data-cmd="engage:pause" type="button">Pause</button>
+            <button class="muted" data-cmd="engage:reset" type="button">Reset</button>
+          </div>
+          <div class="configToolbar">
+            <button data-config-modal="process" type="button">Use AI</button>
+            <button data-config-modal="use" type="button">Mode</button>
+            <button data-config-modal="command" type="button">Command</button>
+            <button data-config-modal="topic" type="button">Topic</button>
+            <button data-config-modal="target" type="button">Target</button>
+          </div>
+        </div>
+        <label class="field compactField">Mode
+          <select data-path="engage.source" id="engageSource">
+            <option value="guardian">Guardian</option>
+            <option value="timeline">Timeline</option>
+            <option value="links">Post Link</option>
+            <option value="profiles">Profile Link</option>
+          </select>
+        </label>
+        <div class="field guardianModeField" id="guardianModeField" hidden>
+          <span>Guardian process</span>
+          <div class="toggle guardianModeToggle" role="group" aria-label="Guardian process">
+            <button type="button" data-guardian-mode="x" data-guardian-scope="main" aria-pressed="true">X</button>
+            <button type="button" data-guardian-mode="tg" data-guardian-scope="main" aria-pressed="false">TG</button>
+          </div>
+        </div>
+        <div class="postLinkField" id="postLinkField" hidden>
+          <label class="fileUpload" for="postLinkFile">Upload Text File</label>
+          <input id="postLinkFile" type="file" accept=".txt,text/plain" hidden>
+          <label class="field">Post Links
+            <textarea data-path="engage.postLinks" data-type="post-links" id="postLinkBox" class="tall" placeholder="https://x.com/user/status/123&#10;https://x.com/user/status/456"></textarea>
+          </label>
+          <small class="hint" id="postLinkHint">One X/Twitter post link per line. Duplicate links are removed automatically.</small>
+        </div>
+        <div class="postLinkField" id="profileLinkField" hidden>
+          <label class="field">Profile Links
+            <textarea data-path="engage.profileLinks" data-type="profile-links" id="profileLinkBox" class="tall" placeholder="https://x.com/user1&#10;https://x.com/user2"></textarea>
+          </label>
+          <small class="hint" id="profileLinkHint">One X/Twitter profile link per line. Links are saved automatically.</small>
+        </div>
+
+        <label class="field compactField">Actions
+          <select data-path="engage.actions" id="engageActions"></select>
+        </label>
+
+        <div class="grid2">
+          <label class="field">API for this automation
+            <select data-path="engage.provider" id="engageProvider"></select>
+          </label>
+          <label class="field">Comment format
+            <select data-path="engage.templateId" id="engageTemplate"></select>
+          </label>
+        </div>
+        <div class="rowActions">
+          <button class="ghost" data-test="channel:engage" type="button">Test this API</button>
+          <a class="link" href="#" data-goto="custom">Manage APIs</a>
+          <a class="link" href="#" data-goto="formats">Manage formats</a>
+        </div>
+        <p class="result" id="channel:engageResult"></p>
+        <small class="hint" id="engageFormatHint"></small>
+
+        <fieldset class="timing">
+          <legend>Comment timing (random range, minimum 1s)</legend>
+          <label><input type="radio" name="engageTiming" data-path="engage.timing" value="random"> Random</label>
+          <div class="grid2" id="randomRange" hidden>
+            <label class="field">Random min (s)<input type="number" data-path="engage.randomMinSec" min="1" max="600" step="1"></label>
+            <label class="field">Random max (s)<input type="number" data-path="engage.randomMaxSec" min="1" max="600" step="1"></label>
+          </div>
+          <small class="hint" id="timingHint"></small>
+        </fieldset>
+
+        <label class="field" id="engageTarget">Stop after this many posts
+          <input type="number" data-path="engage.maxActions" min="1" max="500" step="1">
+        </label>
+
+        <details id="engageFilters">
+          <summary>Which posts to act on</summary>
+          <label class="check"><input type="checkbox" data-path="engage.skipPromoted"> Skip promoted posts</label>
+          <label class="check"><input type="checkbox" data-path="engage.skipReplies" disabled> Skip replies (always on)</label>
+          <label class="check"><input type="checkbox" data-path="engage.skipLiked"> Skip posts already liked</label>
+          <label class="field">Minimum post length (characters)
+            <input type="number" data-path="engage.minTweetChars" min="0" max="500" step="1">
+          </label>
+          <label class="field">Only these authors (blank = everyone)
+            <textarea data-path="engage.onlyAuthors" data-type="usernames" placeholder="@username"></textarea>
+          </label>
+          <label class="field">Authority Skip (never visit or act on these profiles)
+            <textarea data-path="engage.skipAuthors" data-type="usernames" placeholder="@username"></textarea>
+          </label>
+        </details>
+
+        <details>
+          <summary>How replies are written</summary>
+          <div class="grid2">
+            <label class="field">Tone<select data-path="engage.tone" id="engageTone"></select></label>
+            <label class="field">Language<input data-path="engage.language" placeholder="English"></label>
+          </div>
+          <label class="field">Maximum reply length (characters)
+            <input type="number" data-path="engage.maxChars" min="20" max="280" step="1">
+          </label>
+          <label class="field">Prompt template
+            <textarea data-path="engage.prompt" class="tall" spellcheck="false"></textarea>
+          </label>
+          <small class="hint">Placeholders: <code>{{text}}</code> <code>{{author}}</code> <code>{{tone}}</code> <code>{{language}}</code> <code>{{maxChars}}</code></small>
+          <div class="rowActions">
+            <button class="ghost" id="resetPrompt" type="button">Restore default prompt</button>
+            <button class="ghost" id="previewComment" type="button">Preview a reply</button>
+          </div>
+          <p class="result" id="previewResult"></p>
+          <label class="check"><input type="checkbox" data-path="engage.useFallback"> Use a saved comment if the API fails</label>
+          <label class="field">Fallback comments (one per line)
+            <textarea data-path="engage.fallbackComments" data-type="lines"></textarea>
+          </label>
+          <label class="check"><input type="checkbox" data-path="engage.stripLinks"> Remove links from generated replies</label>
+          <label class="check"><input type="checkbox" data-path="engage.reloadOnFinished"> Reload page when finished</label>
+        </details>
+
+        <div class="progress" id="engageProgress">
+          <div><span>Scanned</span><b data-stat="engage.scanned">0</b></div>
+          <div><span>Processed</span><b data-stat="engage.processed">0</b></div>
+          <div><span>Liked</span><b data-stat="engage.liked">0</b></div>
+          <div><span>Commented</span><b data-stat="engage.commented">0</b></div>
+          <div><span>Skipped</span><b data-stat="engage.skipped">0</b></div>
+          <div><span>Target</span><b data-stat="engage.target">0</b></div>
+          <p>Author <strong data-stat="engage.currentAuthor">-</strong></p>
+          <p class="clip">Post <strong data-stat="engage.currentTweet">-</strong></p>
+          <p class="clip">Last reply <strong data-stat="engage.lastComment">-</strong></p>
+          <p>Status <strong data-stat="engage.status">Idle</strong><span class="countdown" data-countdown="engage"></span></p>
+          <p class="notice" data-stat="engage.notice"></p>
+          <p class="error" data-stat="engage.error"></p>
+        </div>
+        <div id="engageQueue" hidden>
+          <h3>Post Link Activity</h3>
+          <p class="communitySummary" id="engageQueueSummary">Pending: 0 | Processing: 0 | Completed: 0 | Skipped: 0 | Failed: 0</p>
+          <ul id="engageQueueList"></ul>
+        </div>
+      </div>
+    </article>
+
+    <details class="logs">
+      <summary>Activity log</summary>
+      <ul id="logList"></ul>
+      <button class="ghost" id="clearLogs" type="button">Clear log</button>
+    </details>
+  </section>
+
+  <section id="panel-community" class="panel" role="tabpanel">
+    <article class="card">
+      <div class="cardHead"><div><h2>Guardian</h2><small>Separate X and Telegram collection queues.</small></div></div>
+      <div class="rowActions">
+        <span class="pill">X: <b id="communityStatus">Idle</b></span>
+        <span class="pill">Telegram: <b id="telegramGuardianStatus">Idle</b></span>
+      </div>
+      <div class="rowActions">
+        <button class="primary" id="communityScan" type="button">Start Guardian</button>
+        <button class="muted" id="guardianStop" type="button">Stop Guardian</button>
+        <button class="ghost" id="guardianClearQueue" type="button">Clear all queues</button>
+      </div>
+      <p class="result" id="communityResult"></p>
+    </article>
+
+    <article class="card" id="communityQueueCard">
+      <div class="cardHead"><div><h2>X Profile Queue</h2><small id="communityStatsSubtitle">Live profile status</small></div></div>
+      <p class="communitySummary" id="communitySummary">Pending: 0 | Processing: 0 | Completed: 0 | Skipped: 0 | Failed: 0</p>
+      <div class="communityQueue" id="communityQueue"></div>
+      <p class="empty" id="communityEmpty">No Guardian profiles queued yet.</p>
+    </article>
+
+    <article class="card" id="telegramQueueCard">
+      <div class="cardHead"><div><h2>Telegram Link Queue</h2><small>Links collected only from messages below the source</small></div></div>
+      <p class="communitySummary" id="telegramSummary">Pending: 0 | Processing: 0 | Completed: 0 | Skipped: 0 | Failed: 0</p>
+      <div class="communityQueue" id="telegramQueue"></div>
+      <p class="empty" id="telegramEmpty">No Telegram links queued yet.</p>
+    </article>
+
+    <textarea id="communityLinks" hidden></textarea>
+    <input id="guardianTelegramLink" type="url" hidden>
+  </section>
+
+  <!-- ================= SECTION 2: COMMENT FORMATS ================= -->
+  <section id="panel-formats" class="panel" role="tabpanel">
+    <p class="lead">Write a format once, save it, then pick it in any automation. Replies follow the saved format exactly.</p>
+
+    <article class="card">
+      <div class="cardHead"><h2 id="formatFormTitle">Add a format</h2></div>
+      <label class="field">Name<input id="formatName" placeholder="Reply + mention" maxlength="60"></label>
+      <label class="field">How it is used
+        <select id="formatMode"></select>
+      </label>
+      <small class="hint" id="formatModeHint"></small>
+      <label class="field"><span id="formatBodyLabel">Format</span>
+        <textarea id="formatBody" class="tall" spellcheck="false" placeholder="{{ai}}&#10;&#10;{{mentions}}"></textarea>
+      </label>
+      <small class="hint">
+        Placeholders: <code>{{ai}}</code> the AI-written part &middot; <code>{{mentions}}</code> &middot;
+        <code>{{author}}</code> &middot; <code>{{text}}</code> &middot; <code>{{tone}}</code> &middot;
+        <code>{{language}}</code> &middot; <code>{{maxChars}}</code>. Random choice: <code>[nice|great|solid]</code>.
+      </small>
+      <label class="field">Mentions to include
+        <textarea id="formatMentions" data-type="usernames" placeholder="@username"></textarea>
+      </label>
+      <small class="hint">Fills <code>{{mentions}}</code>. Leave blank for none.</small>
+      <div class="actions three">
+        <button class="primary" id="formatAdd" type="button">Add</button>
+        <button class="ghost" id="formatPreview" type="button">Preview</button>
+        <button class="muted" id="formatCancel" type="button" hidden>Cancel edit</button>
+      </div>
+      <p class="result" id="formatResult"></p>
+    </article>
+
+    <h3 class="listTitle">Saved formats <span class="pill" id="formatCount">0</span></h3>
+    <ul class="customList" id="formatList"></ul>
+    <p class="empty" id="formatEmpty">No formats saved yet.</p>
+  </section>
+
+  <!-- ================= SECTION 3: APIs & KEYS ================= -->
+  <section id="panel-custom" class="panel" role="tabpanel">
+    <p class="lead">Paste an official key, or add any compatible endpoint. Each automation picks which one it uses.</p>
+
+    <label class="field">Default API for all automations
+      <select id="activeProvider" data-path="activeProvider"></select>
+    </label>
+    <small class="hint">An automation can override this in its own section.</small>
+
+    <nav class="providerPicker">
+      <button class="active" data-provider-panel="openai" type="button">OpenAI</button>
+      <button data-provider-panel="anthropic" type="button">Anthropic</button>
+      <button data-provider-panel="custom" type="button">Custom</button>
+    </nav>
+
+    <article class="card providerPanel" data-provider-view="openai">
+      <div class="cardHead"><h2>OpenAI</h2><span class="pill" id="openaiPill">Not set</span></div>
+      <label class="field">API key
+        <span class="withButton">
+          <input id="openaiKey" data-path="openai.apiKey" type="password" placeholder="sk-..." autocomplete="off" spellcheck="false">
+          <button class="ghost reveal" data-reveal="openaiKey" type="button">Show</button>
+        </span>
+      </label>
+      <label class="field">Model
+        <input id="openaiModel" data-path="openai.model" list="openaiModels" placeholder="gpt-4o-mini" spellcheck="false">
+        <datalist id="openaiModels"></datalist>
+      </label>
+      <div class="rowActions">
+        <button class="ghost" data-test="openai" type="button">Test connection</button>
+        <a class="link" id="openaiKeysUrl" href="#" target="_blank" rel="noreferrer">Get a key</a>
+      </div>
+      <p class="result" id="openaiResult"></p>
+    </article>
+
+    <article class="card providerPanel" data-provider-view="anthropic" hidden>
+      <div class="cardHead"><h2>Anthropic</h2><span class="pill" id="anthropicPill">Not set</span></div>
+      <label class="field">API key
+        <span class="withButton">
+          <input id="anthropicKey" data-path="anthropic.apiKey" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+          <button class="ghost reveal" data-reveal="anthropicKey" type="button">Show</button>
+        </span>
+      </label>
+      <label class="field">Model
+        <input id="anthropicModel" data-path="anthropic.model" list="anthropicModels" placeholder="claude-sonnet-5" spellcheck="false">
+        <datalist id="anthropicModels"></datalist>
+      </label>
+      <div class="rowActions">
+        <button class="ghost" data-test="anthropic" type="button">Test connection</button>
+        <a class="link" id="anthropicKeysUrl" href="#" target="_blank" rel="noreferrer">Get a key</a>
+      </div>
+      <p class="result" id="anthropicResult"></p>
+    </article>
+
+    <div class="providerPanel" data-provider-view="custom" hidden>
+    <h3 class="listTitle">Custom endpoints</h3>
+    <p class="lead">Any OpenAI- or Anthropic-compatible endpoint: a proxy, a gateway, a local server, or another vendor.</p>
+
+    <article class="card">
+      <div class="cardHead"><h2 id="customFormTitle">Add an endpoint</h2></div>
+      <label class="field">Name<input id="customName" placeholder="My gateway" maxlength="60"></label>
+      <label class="field">Request format
+        <select id="customFormat">
+          <option value="openai">OpenAI compatible (/chat/completions)</option>
+          <option value="anthropic">Anthropic compatible (/messages)</option>
+        </select>
+      </label>
+      <label class="field">Base URL or full endpoint
+        <input id="customUrl" placeholder="https://api.example.com/v1" spellcheck="false">
+      </label>
+      <small class="hint" id="urlPreview"></small>
+      <label class="field">API key
+        <span class="withButton">
+          <input id="customKey" type="password" placeholder="Your key" autocomplete="off" spellcheck="false">
+          <button class="ghost reveal" data-reveal="customKey" type="button">Show</button>
+        </span>
+      </label>
+      <label class="field">Model<input id="customModel" placeholder="model-name" spellcheck="false"></label>
+      <details>
+        <summary>Advanced header</summary>
+        <div class="grid2">
+          <label class="field">Header name<input id="customHeaderName" placeholder="Authorization"></label>
+          <label class="field">Value prefix<input id="customHeaderPrefix" placeholder="Bearer "></label>
+        </div>
+        <small class="hint">Leave both blank to use the default for the selected format.</small>
+      </details>
+      <div class="actions three">
+        <button class="primary" id="customAdd" type="button">Add</button>
+        <button class="ghost" id="customTest" type="button">Test</button>
+        <button class="muted" id="customCancel" type="button" hidden>Cancel edit</button>
+      </div>
+      <p class="result" id="customResult"></p>
+    </article>
+
+    <h2 class="listTitle">Saved endpoints <span class="pill" id="customCount">0</span></h2>
+    <ul id="customList" class="customList"></ul>
+    <p class="empty" id="customEmpty">Nothing saved yet.</p>
+    </div>
+  </section>
+
+  <section id="panel-account" class="panel" role="tabpanel">
+    <div id="accountSignedOut">
+      <article class="card googleCard">
+        <div class="cardHead"><h2>Welcome</h2></div>
+        <p class="lead">Continue with Google to create your account or sign in.</p>
+        <button class="primary googleButton" id="accountGoogle" type="button">Continue with Google</button>
+        <p class="result" id="accountAuthResult"></p>
+      </article>
+    </div>
+
+    <div id="accountPending" hidden>
+      <article class="card pendingCard">
+        <div class="pendingIcon">!</div>
+        <h2>Access Required</h2>
+        <p>Your account has been created, but access to the extension has not been approved yet.</p>
+        <p>Contact the Owner on Telegram to request access:</p>
+        <a id="pendingTelegram" class="telegramContact" href="#" target="_blank" rel="noreferrer"><span id="pendingTelegramLabel">Telegram: @yourusername</span><b>Contact</b></a>
+        <p class="hint">After approval, all permitted extension features will unlock automatically.</p>
+        <button class="ghost" id="pendingRefresh" type="button">Check access again</button>
+        <button class="ghost" id="pendingLogout" type="button">Log out</button>
+      </article>
+    </div>
+
+    <div id="accountSignedIn" hidden>
+      <article class="card">
+        <div class="cardHead"><h2>Profile</h2><span class="pill" id="accountRole">user</span></div>
+        <label class="field">Name
+          <div class="withButton"><input id="profileName" maxlength="80" placeholder="Your name"><button id="saveProfileName" type="button">Save</button></div>
+        </label>
+        <p class="accountEmail" id="profileEmail"></p>
+        <div class="accountFacts">
+          <div><span>Status</span><b id="profileStatus">-</b></div>
+          <div><span>Last active</span><b id="profileLastSeen">-</b></div>
+          <div><span>Access</span><b id="profileAccess">Pending</b></div>
+          <div><span>Session expires</span><b id="profileSession">-</b></div>
+        </div>
+        <h3>Feature access</h3>
+        <div id="profilePermissions" class="permissionList"></div>
+        <h3>Assigned AI / API</h3>
+        <div id="profileAssignedApis" class="permissionList"></div>
+        <p class="result" id="profileResult"></p>
+        <button class="ghost" id="accountLogout" type="button">Log out</button>
+        <details>
+          <summary>My recent activity</summary>
+          <ul id="profileActivity" class="auditList"></ul>
+        </details>
+      </article>
+
+      <section id="adminPanel" hidden>
+        <div class="adminSectionHead"><div><h2>Account Management</h2><small>Users, access, APIs and configuration</small></div><button class="ghost" id="adminRefresh" type="button">Refresh</button></div>
+        <div id="adminStats" class="adminStats"></div>
+
+        <section class="adminBlock">
+          <div class="adminBlockHead"><div><h3>Users</h3><small id="adminUserCount">0 users</small></div></div>
+          <div class="adminFilters" role="tablist" aria-label="Filter users by status">
+            <button class="active" data-admin-filter="active" type="button">Active</button>
+            <button data-admin-filter="suspended" type="button">Suspended</button>
+            <button data-admin-filter="banned" type="button">Banned</button>
+            <button data-admin-filter="paused" type="button">Paused</button>
+          </div>
+          <ul id="adminUsers" class="adminUsers"></ul>
+          <p class="empty" id="adminUsersEmpty" hidden>No users in this section.</p>
+        </section>
+
+        <section class="adminBlock">
+          <div class="adminBlockHead"><div><h3>Custom API Access</h3><small>Assign saved Custom APIs to one or more users</small></div></div>
+          <div id="adminApiList" class="adminApiList"></div>
+          <p class="empty" id="adminApiEmpty">No Custom API is saved. Add one from the APIs section.</p>
+        </section>
+
+        <section class="adminBlock">
+          <details>
+            <summary>Remote Configuration</summary>
+            <label class="check"><input id="adminMaintenance" type="checkbox"> Maintenance mode</label>
+            <div class="adminPolicyGrid">
+              <label class="check"><input id="adminAllowUnfollow" type="checkbox"> Unfollow</label>
+              <label class="check"><input id="adminAllowEngage" type="checkbox"> Engage</label>
+              <label class="check"><input id="adminAllowAi" type="checkbox"> AI</label>
+              <label class="check"><input id="adminAllowKeys" type="checkbox"> User API keys</label>
+              <label class="check"><input id="adminAllowCustom" type="checkbox"> Custom providers</label>
+              <label class="check"><input id="adminFallback" type="checkbox"> Fallback comments</label>
+            </div>
+            <div class="grid2">
+              <label class="field">Engage max actions<input id="adminEngageMax" type="number" min="1" max="500"></label>
+              <label class="field">Engage min delay<input id="adminEngageMin" type="number" min="1" max="600"></label>
+              <label class="field">Engage max delay<input id="adminEngageMaxDelay" type="number" min="1" max="600"></label>
+              <label class="field">Unfollow min delay<input id="adminUnfollowMin" type="number" min="0.5" max="600" step="0.5"></label>
+              <label class="field">Unfollow max delay<input id="adminUnfollowMax" type="number" min="0.5" max="600" step="0.5"></label>
+              <label class="field">Cooldown minutes<input id="adminCooldown" type="number" min="0" max="120"></label>
+            </div>
+            <label class="field">Remote prompt<textarea id="adminRemotePrompt"></textarea></label>
+            <div class="grid2"><label class="field">OpenAI model<input id="adminOpenaiModel"></label><label class="field">Anthropic model<input id="adminAnthropicModel"></label></div>
+            <button class="primary" id="saveAdminConfig" type="button">Save Configuration</button>
+          </details>
+        </section>
+
+        <section class="adminBlock adminSettings">
+          <h3>Owner Settings</h3>
+          <label class="field">Telegram username<input id="adminTelegram" placeholder="@yourusername"></label>
+          <button class="primary" id="saveAdminSettings" type="button">Save Telegram</button>
+        </section>
+        <p class="result" id="adminResult"></p>
+        <section class="adminBlock"><details><summary>Recent audit activity</summary><ul id="adminLogs" class="auditList"></ul></details></section>
+      </section>
+    </div>
+  </section>
+</main>
+
+<nav class="bottomNav" aria-label="Main sections">
+  <button class="bottomTab active" data-tab="automation" type="button">Automation</button>
+  <button class="bottomTab" data-tab="community" type="button">Guardian</button>
+  <button class="bottomTab" data-tab="formats" type="button">Formats</button>
+  <button class="bottomTab" data-tab="custom" type="button">APIs</button>
+  <button class="bottomTab" data-tab="account" type="button">Account</button>
+</nav>
+
+<div id="confirmModal" class="modal" hidden>
+  <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Confirm</h2>
+    <p id="confirmText"></p>
+    <div class="modalActions">
+      <button id="cancelConfirm" type="button">Cancel</button>
+      <button id="approveConfirm" class="primary" type="button">Continue</button>
+    </div>
+  </div>
+</div>
+
+<div id="configModal" class="modal" hidden>
+  <div class="modalCard configModalCard" role="dialog" aria-modal="true" aria-labelledby="configTitle">
+    <div class="cardHead"><h2 id="configTitle">Configure</h2><button id="closeConfig" type="button">Close</button></div>
+    <div id="configProcess" class="configView" hidden>
+      <div class="aiChoiceList" id="aiChoiceList"></div>
+      <p class="result" id="aiChoiceResult"></p>
+    </div>
+    <div id="configUse" class="configView" hidden>
+      <label class="field">Mode<select id="modalSource"><option value="guardian">Guardian</option><option value="timeline">Timeline</option><option value="links">Post Link</option><option value="profiles">Profile Link</option></select></label>
+      <div class="field guardianModeField" id="modalGuardianModeField" hidden>
+        <span>Guardian process</span>
+        <div class="toggle guardianModeToggle" role="group" aria-label="Guardian process">
+          <button type="button" data-guardian-mode="x" data-guardian-scope="modal" aria-pressed="true">X</button>
+          <button type="button" data-guardian-mode="tg" data-guardian-scope="modal" aria-pressed="false">TG</button>
+        </div>
+      </div>
+      <div class="postLinkField" id="modalPostLinkField" hidden>
+        <label class="fileUpload" for="modalPostLinkFile">Upload Text File</label>
+        <input id="modalPostLinkFile" type="file" accept=".txt,text/plain" hidden>
+        <label class="field">Post Links<textarea id="modalPostLinkBox" class="tall" placeholder="One X/Twitter post link per line"></textarea></label>
+        <small class="hint" id="modalPostLinkHint">Duplicate links are removed automatically.</small>
+      </div>
+      <div class="postLinkField" id="modalProfileLinkField" hidden><label class="field">Profile Links<textarea id="modalProfileLinkBox" class="tall" placeholder="One X/Twitter profile link per line"></textarea></label><small class="hint" id="modalProfileLinkHint">Saved Profile Links are retained when you change modes.</small></div>
+      <div class="grid2"><label class="field">API<select id="modalProvider"></select></label><label class="field">Format<select id="modalTemplate"></select></label></div>
+    </div>
+    <div id="configCommand" class="configView" hidden>
+      <label class="field">Action<select id="modalActions"><option value="both">Like + Comment</option><option value="like">Like only</option><option value="comment">Comment only</option></select></label>
+      <div class="grid2"><label class="field">Random min (s)<input id="modalRandomMin" type="number" min="1" max="600"></label><label class="field">Random max (s)<input id="modalRandomMax" type="number" min="1" max="600"></label></div>
+    </div>
+    <div id="configTopic" class="configView" hidden>
+      <label class="field">Minimum post length<input id="modalMinTweet" type="number" min="0" max="500"></label>
+      <label class="field">Only authors<textarea id="modalOnlyAuthors"></textarea></label>
+      <label class="field">Skip authors<textarea id="modalSkipAuthors"></textarea></label>
+      <label class="check"><input id="modalSkipPromoted" type="checkbox"> Skip promoted</label>
+      <label class="check"><input id="modalSkipLiked" type="checkbox"> Skip already liked</label>
+    </div>
+    <div id="configTarget" class="configView" hidden>
+      <label class="field">Stop after this many posts<input id="modalMaxActions" type="number" min="1" max="500"></label>
+      <label class="field">Maximum reply length<input id="modalMaxChars" type="number" min="20" max="280"></label>
+    </div>
+    <div class="modalActions"><button id="saveConfig" class="primary" type="button">Save</button></div>
+    <p class="result" id="configResult"></p>
+  </div>
+</div>
+
+<div id="apiAssignModal" class="modal" hidden>
+  <div class="modalCard apiAssignCard" role="dialog" aria-modal="true" aria-labelledby="apiAssignTitle">
+    <div class="cardHead"><div><h2 id="apiAssignTitle">Assign Custom API</h2><small>Select users who can use this API</small></div><button id="closeApiAssign" type="button">Close</button></div>
+    <div id="apiAssignUsers" class="apiAssignUsers"></div>
+    <div class="modalActions"><button id="cancelApiAssign" type="button">Cancel</button><button id="saveApiAssign" class="primary" type="button">Save Access</button></div>
+    <p class="result" id="apiAssignResult"></p>
+  </div>
+</div>
+
+<footer><small>Actions run through X's visible interface. If X shows a challenge, the run pauses automatically.</small></footer>
+<script type="module" src="popup.js"></script>
+</body>
+</html>

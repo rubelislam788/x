@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "X Following Manager",
+  "version": "2.1.9",
+  "description": "Manage your X following list and timeline engagement through the normal web interface, with your own AI API keys.",
+  "permissions": ["storage", "tabs", "scripting", "identity", "alarms"],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://*.x.com/*",
+    "https://twitter.com/*",
+    "https://*.twitter.com/*",
+    "https://t.me/*",
+    "https://*.t.me/*",
+    "https://telegram.me/*",
+    "https://*.telegram.me/*",
+    "https://web.telegram.org/*",
+    "https://xlheiteyhehitebsexox.supabase.co/*",
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*"
+  ],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self'"
+  },
+  "background": { "service_worker": "background.js", "type": "module" },
+  "web_accessible_resources": [
+    {
+      "resources": ["logo.png"],
+      "matches": ["https://x.com/*", "https://*.x.com/*", "https://twitter.com/*", "https://*.twitter.com/*", "https://t.me/*", "https://*.t.me/*", "https://telegram.me/*", "https://*.telegram.me/*", "https://web.telegram.org/*"]
+    },
+    {
+      "resources": ["auth.html", "auth.js"],
+      "matches": ["https://xlheiteyhehitebsexox.supabase.co/*"]
+    }
+  ],
+  "action": {
+    "default_title": "X Following Manager",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://*.x.com/*", "https://twitter.com/*", "https://*.twitter.com/*"],
+      "js": ["content.js", "unfollow.js", "engage.js", "guardian.js"],
+      "run_at": "document_idle"
+    }
+    ,{
+      "matches": ["https://t.me/*", "https://*.t.me/*", "https://telegram.me/*", "https://*.telegram.me/*", "https://web.telegram.org/*"],
+      "js": ["guardian.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
